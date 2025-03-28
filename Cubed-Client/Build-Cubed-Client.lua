@@ -1,4 +1,4 @@
-project "CubedApp"
+project "Cubed-Client"
    kind "ConsoleApp"
    language "C++"
    cppdialect "C++20"
