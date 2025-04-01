@@ -33,7 +33,7 @@ namespace Cubed
 
 	void ClientLayer::OnAttach()
 	{
-		s_ScratchBuffer.Allocate(10 * 1024 * 1024); // 10MB of scratch buffer
+		s_ScratchBuffer.Allocate((uint64_t)(10 * 1024) * 1024); // 10MB of scratch buffer
 
 		// set callback function to local private function
 		m_Client.SetDataReceivedCallback([this](const Buffer buffer) { OnDataReceived(buffer); });
