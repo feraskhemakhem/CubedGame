@@ -7,6 +7,8 @@ workspace "Cubed-Client"
    filter "system:windows"
       buildoptions { "/EHsc", "/Zc:preprocessor", "/Zc:__cplusplus" }
 
+    defines { "IMGUI_DEFINE_MATH_OPERATORS" }
+
 -- Directories
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 WalnutNetworkingBinDir = "Walnut/Walnut-Modules/Walnut-Networking/vendor/GameNetworkingSockets/bin/%{cfg.system}/%{cfg.buildcfg}/"

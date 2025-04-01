@@ -83,7 +83,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <AdditionalOptions>/EHsc /Zc:preprocessor /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/EHsc /Zc:preprocessor /Zc:__cplusplus /utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -110,7 +110,7 @@ IF EXIST "..\Walnut\Walnut-Modules\Walnut-Networking\vendor\GameNetworkingSocket
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AdditionalOptions>/EHsc /Zc:preprocessor /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/EHsc /Zc:preprocessor /Zc:__cplusplus /utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -139,7 +139,7 @@ IF EXIST "..\Walnut\Walnut-Modules\Walnut-Networking\vendor\GameNetworkingSocket
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AdditionalOptions>/EHsc /Zc:preprocessor /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/EHsc /Zc:preprocessor /Zc:__cplusplus /utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -155,6 +155,27 @@ IF EXIST "..\Walnut\Walnut-Modules\Walnut-Networking\vendor\GameNetworkingSocket
 IF EXIST "..\Walnut\Walnut-Modules\Walnut-Networking\vendor\GameNetworkingSockets\bin\windows\Dist\libprotobufd.dll"\ (xcopy /Q /E /Y /I "..\Walnut\Walnut-Modules\Walnut-Networking\vendor\GameNetworkingSockets\bin\windows\Dist\libprotobufd.dll" "..\bin\Dist-windows-x86_64\Cubed-Server" &gt; nul) ELSE (xcopy /Q /Y /I "..\Walnut\Walnut-Modules\Walnut-Networking\vendor\GameNetworkingSockets\bin\windows\Dist\libprotobufd.dll" "..\bin\Dist-windows-x86_64\Cubed-Server" &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\HeadlessConsole.h" />
+    <ClInclude Include="Source\ServerLayer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\CubedApp.cpp">
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <ClCompile Include="Source\HeadlessConsole.cpp">
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <ClCompile Include="Source\ServerLayer.cpp">
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Cubed-Common\Cubed-Common-Headless.vcxproj">
       <Project>{D412A3DC-407F-5ED7-0973-F634759E803F}</Project>
