@@ -9,8 +9,10 @@
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 
+// for processing data to and from the server
 #include "Walnut/Serialization/BufferStream.h"
 
+// cubed-common include
 #include "ServerPacket.h"
 
 using namespace Walnut;
@@ -126,15 +128,12 @@ namespace Cubed
 				ImGui::TextColored(ImColor(UI::Colors::Theme::textDarker), "Connecting...");
 
 			if (ImGui::Button("Connect"))
-			{ 
+			{
 				m_Client.ConnectToServer(m_serverAddress);
 			}
 
 			ImGui::End();
 		}
-
-		// display window
-		ImGui::ShowDemoWindow();
 	}
 
 	void ClientLayer::OnDataReceived(const Buffer buffer)
