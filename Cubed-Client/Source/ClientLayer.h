@@ -29,6 +29,16 @@ namespace Cubed
 		std::string m_serverAddress;
 
 		Walnut::Client m_Client;
-	};
+		uint32_t m_PlayerID;
 
+		struct PlayerData
+		{
+			glm::vec2 Position;
+			glm::vec2 Velocity;
+		};
+
+		// lock-safe map
+		std::mutex m_PlayerDataMutex;
+		std::map<uint32_t, PlayerData> m_PlayerData;
+	};
 }

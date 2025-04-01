@@ -1,10 +1,12 @@
 #pragma once
 
+#include <map>
+
+#include "glm/glm.hpp"
 #include "Walnut/Layer.h"
 #include "Walnut/Networking/Server.h"
 
 #include "HeadlessConsole.h"
-
 
 namespace Cubed
 {
@@ -27,5 +29,15 @@ namespace Cubed
 	private:
 		HeadlessConsole m_Console;
 		Walnut::Server m_Server{ 8192 };
+
+		struct PlayerData
+		{
+			glm::vec2 Position;
+			glm::vec2 Velocity;
+		};
+
+		// lock-safe map
+		std::mutex m_PlayerDataMutex;
+		std::map<uint32_t, PlayerData> m_PlayerData;
 	};
 }
