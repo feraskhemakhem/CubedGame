@@ -37,6 +37,8 @@ namespace Cubed
 
 		// set callback function to local private function
 		m_Client.SetDataReceivedCallback([this](const Buffer buffer) { OnDataReceived(buffer); });
+
+		m_Renderer.Init();
 	}
 
 
@@ -90,6 +92,15 @@ namespace Cubed
 		stream.WriteRaw<glm::vec2>(m_PlayerPosition);
 		stream.WriteRaw<glm::vec2>(m_PlayerVelocity);
 		m_Client.SendBuffer(stream.GetBuffer());
+	}
+
+	void ClientLayer::OnRender()
+	{
+		// 1. bind pipeline
+		// 2. bind vertex/index buffers
+		// 3. draw call
+
+		m_Renderer.Render();
 	}
 
 	void ClientLayer::OnUIRender()
