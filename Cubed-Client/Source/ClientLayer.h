@@ -24,9 +24,12 @@ namespace Cubed
 		void OnDataReceived(const Walnut::Buffer buffer);
 	private:
 		Renderer m_Renderer;
+		Camera m_Camera;
 
-		glm::vec2 m_PlayerPosition{ 50, 50 };
+		glm::vec2 m_PlayerPosition{ 0, 0 };
+		glm::vec3 m_PlayerRotation{ 30.0f, 45.0f, 0 }; // in degrees
 		glm::vec2 m_PlayerVelocity{ 0, 0 };
+
 		const float speed = 150.0f;
 		const float friction = 10.0f;
 

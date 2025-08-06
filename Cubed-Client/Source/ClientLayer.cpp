@@ -9,6 +9,8 @@
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 
+#include "glm/gtc/type_ptr.hpp"
+
 // for processing data to and from the server
 #include "Walnut/Serialization/BufferStream.h"
 
@@ -19,7 +21,7 @@ using namespace Walnut;
 
 namespace Cubed
 {
-	static Buffer s_ScratchBuffer;
+	static Walnut::Buffer s_ScratchBuffer;
 
 	// draw a simple rectangle
 	static void DrawRect(glm::vec2 position, glm::vec2 size, uint32_t color)
@@ -36,7 +38,7 @@ namespace Cubed
 		s_ScratchBuffer.Allocate((uint64_t)(10 * 1024) * 1024); // 10MB of scratch buffer
 
 		// set callback function to local private function
-		m_Client.SetDataReceivedCallback([this](const Buffer buffer) { OnDataReceived(buffer); });
+		m_Client.SetDataReceivedCallback([this](const Walnut::Buffer buffer) { OnDataReceived(buffer); });
 
 		m_Renderer.Init();
 	}
@@ -50,8 +52,8 @@ namespace Cubed
 	void ClientLayer::OnUpdate(float ts)
 	{
 		// if not connected, ignore movement
-		if (m_Client.GetConnectionStatus() != Client::ConnectionStatus::Connected)
-			return;
+	/*	if (m_Client.GetConnectionStatus() != Client::ConnectionStatus::Connected)
+			return;*/
 
 		// read wasd inputs on update  to move square
 		glm::vec2 dir{ 0.0f, 0.0f };
@@ -86,12 +88,18 @@ namespace Cubed
 
 		m_PlayerVelocity = glm::mix(m_PlayerVelocity, glm::vec2(0.0f), friction * ts); // lerp decay at a rate of 10f
 
-		// send player data to server
-		BufferStreamWriter stream(s_ScratchBuffer);
-		stream.WriteRaw(PacketType::ClientUpdate);
-		stream.WriteRaw<glm::vec2>(m_PlayerPosition);
-		stream.WriteRaw<glm::vec2>(m_PlayerVelocity);
-		m_Client.SendBuffer(stream.GetBuffer());
+		m_PlayerRotation.y += ts * 20.0f;
+
+		if (m_Client.GetConnectionStatus() == Client::ConnectionStatus::Connected)
+		{
+
+			// send player data to server
+			BufferStreamWriter stream(s_ScratchBuffer);
+			stream.WriteRaw(PacketType::ClientUpdate);
+			stream.WriteRaw<glm::vec2>(m_PlayerPosition);
+			stream.WriteRaw<glm::vec2>(m_PlayerVelocity);
+			m_Client.SendBuffer(stream.GetBuffer());
+		}
 	}
 
 	void ClientLayer::OnRender()
@@ -100,16 +108,13 @@ namespace Cubed
 		// 2. bind vertex/index buffers
 		// 3. draw call
 
-		m_Renderer.Render();
-	}
+		m_Renderer.BeginScene(m_Camera);
 
-	void ClientLayer::OnUIRender()
-	{
-		Client::ConnectionStatus connectionStatus = m_Client.GetConnectionStatus();
-		if (connectionStatus == Client::ConnectionStatus::Connected)
+		//Client::ConnectionStatus connectionStatus = m_Client.GetConnectionStatus();
+		//if (connectionStatus == Client::ConnectionStatus::Connected)
 		{
 			// draw self
-			DrawRect(m_PlayerPosition, { 50.0f, 50.0f }, 0xffff00ff);
+			m_Renderer.RenderCube(glm::vec3(m_PlayerPosition.x, 0.5f, m_PlayerPosition.y), m_PlayerRotation);
 
 			// read other players' data
 			m_PlayerDataMutex.lock();
@@ -123,8 +128,40 @@ namespace Cubed
 				if (id == m_PlayerID)
 					continue;
 
-				// draw other players
-				DrawRect(data.Position, { 50.0f, 50.0f }, 0xff00ff00);
+				// draw other players (do not have rotation data so set to 0)
+				m_Renderer.RenderCube(glm::vec3(data.Position.x, 0.5f, data.Position.y), {0.0f, 0.0f, 0.0f});
+			}
+		}
+
+		m_Renderer.EndScene(m_Camera);
+	}
+
+	void ClientLayer::OnUIRender()
+	{
+		Client::ConnectionStatus connectionStatus = m_Client.GetConnectionStatus();
+		if (connectionStatus == Client::ConnectionStatus::Connected)
+		{
+			if (false)
+			{
+
+				// draw self
+				DrawRect(m_PlayerPosition, { 50.0f, 50.0f }, 0xffff00ff);
+
+				// read other players' data
+				m_PlayerDataMutex.lock();
+				std::map<uint32_t, PlayerData> playerData = m_PlayerData;
+				m_PlayerDataMutex.unlock();
+
+				// process data freely outside of lock
+				for (const auto& [id, data] : playerData)
+				{
+					// skip ourselves
+					if (id == m_PlayerID)
+						continue;
+
+					// draw other players
+					DrawRect(data.Position, { 50.0f, 50.0f }, 0xff00ff00);
+				}
 			}
 		}
 		else
@@ -145,9 +182,19 @@ namespace Cubed
 
 			ImGui::End();
 		}
+
+		m_Renderer.RenderUI();
+
+		ImGui::Begin("Controls");
+		ImGui::DragFloat3("Player Position", glm::value_ptr(m_PlayerPosition), 0.05f);
+		ImGui::DragFloat3("Player Rotation", glm::value_ptr(m_PlayerRotation), 0.05f);
+
+		ImGui::DragFloat3("Camera Position", glm::value_ptr(m_Camera.Position), 0.05f);
+		ImGui::DragFloat3("Camera Rotation", glm::value_ptr(m_Camera.Rotation), 0.05f);
+		ImGui::End();
 	}
 
-	void ClientLayer::OnDataReceived(const Buffer buffer)
+	void ClientLayer::OnDataReceived(const Walnut::Buffer buffer)
 	{
 		BufferStreamReader stream(buffer);
 
