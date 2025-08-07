@@ -2,6 +2,8 @@
 
 #include "Vulkan.h"
 
+#include "Texture.h"
+
 #include "glm/glm.hpp"
 
 #include <fstream>
@@ -34,12 +36,16 @@ namespace Cubed {
 		void Init();
 		void Shutdown();
 
+		~Renderer();
+
 		void BeginScene(const Camera& camera);
 		void EndScene(const Camera& camera);
 
 		void Render();
 		void RenderCube(const glm::vec3& position, const glm::vec3& rotation);
 		void RenderUI();
+	public:
+		static uint32_t GetVulkanMemoryType(VkMemoryPropertyFlags properties, uint32_t type_bits);
 	private:
 		void InitPipeline();
 		void InitBuffers();
@@ -52,6 +58,11 @@ namespace Cubed {
 		VkPipeline m_GraphicsPipeline = nullptr;
 		VkPipelineLayout m_PipelineLayout = nullptr;
 
+		// texture sample info
+		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
+		VkDescriptorSetLayout m_DescriptorSetLayout = nullptr;
+		VkDescriptorSet m_DescriptorSet = nullptr;
+
 		// buffers read through pipeline
 		Buffer m_VertexBuffer, m_IndexBuffer;
 
@@ -61,6 +72,8 @@ namespace Cubed {
 			glm::mat4 ViewProjection;
 			glm::mat4 Transform;
 		} m_PushConstants;
+
+		std::shared_ptr<Texture> m_Texture; // dont want to copy it or accidentally delete it too early
 	};
 
 }

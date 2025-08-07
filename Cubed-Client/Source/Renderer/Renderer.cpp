@@ -10,8 +10,14 @@
 
 namespace Cubed {
 
+	Renderer::~Renderer()
+	{
+		VkDevice device = GetVulkanInfo()->Device;
+		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
+	}
+
 	// ripped from imgui implementation of vulkan
-	static uint32_t ImGui_ImplVulkan_MemoryType(VkMemoryPropertyFlags properties, uint32_t type_bits)
+	uint32_t Renderer::GetVulkanMemoryType(VkMemoryPropertyFlags properties, uint32_t type_bits)
 	{
 		VkPhysicalDevice physicalDevice = GetVulkanInfo()->PhysicalDevice;
 
@@ -25,8 +31,78 @@ namespace Cubed {
 
 	void Renderer::Init()
 	{
+		// create texture shared ptr
+		uint32_t color = 0xffff00ff;
+		m_Texture = std::make_shared<Texture>(1, 1, Walnut::Buffer(&color, sizeof(uint32_t)));
+
+		// create descriptor set layout
+		VkDevice device = GetVulkanInfo()->Device;
+		VkDescriptorSetLayoutBinding binding[1] = {};
+		binding[0] =
+		{
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.descriptorCount = 1,
+			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+		}; 
+		VkDescriptorSetLayoutCreateInfo info {
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+			.bindingCount = 1,
+			.pBindings = binding
+		};
+
+		VK_CHECK(vkCreateDescriptorSetLayout(device, &info, nullptr, &m_DescriptorSetLayout));
+	
+		// Create Descriptor Pool
+		// redoing this because ApplicationGUI's version is not exposed
+		{
+			VkDescriptorPoolSize pool_sizes[] =
+			{
+				{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+				{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+			};
+			VkDescriptorPoolCreateInfo pool_info = {};
+			pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+			pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+			pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
+			pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+			pool_info.pPoolSizes = pool_sizes;
+
+			VK_CHECK(vkCreateDescriptorPool(device, &pool_info, nullptr, &m_DescriptorPool));
+		}
+
+		// create descriptor set
+		VkDescriptorSetAllocateInfo allocInfo
+		{
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+			.descriptorPool = m_DescriptorPool,
+			.descriptorSetCount = 1,
+			.pSetLayouts = &m_DescriptorSetLayout
+		};
+		vkAllocateDescriptorSets(device, &allocInfo, &m_DescriptorSet);
+
+		VkWriteDescriptorSet wds{
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.dstSet = m_DescriptorSet,
+			.dstBinding = 0,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			.pImageInfo = &m_Texture->GetImageInfo()  // set texture 0 into descriptor set
+		};
+
+		vkUpdateDescriptorSets(device, 1, &wds, 0, nullptr);
+
 		InitBuffers();
 		InitPipeline();
+		
 	}
 
 	void Renderer::Shutdown()
@@ -82,6 +158,8 @@ namespace Cubed {
 
 		// Bind the graphics pipeline (no render pass in our renderer, so keep here)
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
+
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSet, 0, nullptr);
 
 		// use push constants to move cube
 		vkCmdPushConstants(commandBuffer, m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstants), &m_PushConstants);
@@ -253,8 +331,10 @@ namespace Cubed {
 
 		VkPipelineLayoutCreateInfo layout_info{
 			.flags = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+			.setLayoutCount = 1,
+			.pSetLayouts = &m_DescriptorSetLayout,
 			.pushConstantRangeCount = (uint32_t)pushConstantRanges.size(),
-			.pPushConstantRanges = pushConstantRanges.data()
+			.pPushConstantRanges = pushConstantRanges.data(),
 		};
 
 		VK_CHECK(vkCreatePipelineLayout(device, &layout_info, nullptr, &m_PipelineLayout));
@@ -406,7 +486,7 @@ namespace Cubed {
 		VkMemoryAllocateInfo alloc_info {
 			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 			.allocationSize = req.size,
-			.memoryTypeIndex = ImGui_ImplVulkan_MemoryType(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, req.memoryTypeBits)
+			.memoryTypeIndex = GetVulkanMemoryType(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, req.memoryTypeBits)
 		};
 		
 		VK_CHECK(vkAllocateMemory(device, &alloc_info, nullptr, &buffer.Memory));
